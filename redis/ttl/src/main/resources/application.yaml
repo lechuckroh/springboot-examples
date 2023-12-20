@@ -1,0 +1,6 @@
+spring:
+  cache:
+    redis:
+      key-prefix: "demo:"
+      time-to-live: 120000
+    type: redis

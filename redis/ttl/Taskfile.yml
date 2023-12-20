@@ -1,0 +1,14 @@
+version: '3'
+
+
+tasks:
+  run:
+    summary: "개발 서버 실행"
+    cmds:
+      - ./gradlew bootRun
+
+  redis-cli:
+    summary: "실행중인 redis 에 접속"
+    cmds:
+      - docker compose exec redis redis-cli
+
