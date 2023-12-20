@@ -235,3 +235,36 @@ class SessionController(val repo: SessionRepository) {
 `getSession()` 함수 호출 결과를 캐싱하기 위해 생성된 키의 패턴은 `{key-prefix}{cacheName}::{generatedKey}` 가 됩니다.
 
 예를 들어, `GET /sessions/3` 을 호출한 경우, `demo:sessions::SessionController_getSession_3` 이라는 Redis key 에 캐싱 데이터가 저장됩니다.
+
+### 5. 개별 캐시 TTL 설정
+
+기본 제공되는 캐싱 옵션은 간단하긴 하지만 세부적인 컨트롤을 할 수 없습니다.
+개별 캐시 이름에 대해서 TTL 을
+설정하려면 [RedisCacheManagerBuilderCustomizer](https://docs.spring.io/spring-boot/docs/current/api/org/springframework/boot/autoconfigure/cache/RedisCacheManagerBuilderCustomizer.html)
+Bean 을 등록합니다.
+
+```kotlin
+@EnableCaching
+@Configuration
+class ApplicationConfig : CachingConfigurer {
+  @Bean
+  fun redisCacheManagerBuilderCustomizer(): RedisCacheManagerBuilderCustomizer {
+    return RedisCacheManagerBuilderCustomizer { builder ->
+      builder.withCacheConfiguration(
+        "sessions",     // 1. 캐시 이름
+        RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofMinutes(3))  // 2. 디폴트 캐시 설정 오버라이드
+      )
+    }
+  }
+}
+```
+
+1. 오버라이드할 캐시 이름을 지정합니다.
+2. 지정한 캐시 이름의 캐싱 설정을 오버라이드합니다. 사용 가능한
+   메서드는 [RedisCacheManagerBuilder](https://docs.spring.io/spring-data/data-redis/docs/current-SNAPSHOT/api/org/springframework/data/redis/cache/RedisCacheManager.RedisCacheManagerBuilder.html)
+   API 문서를 참고하세요.
+
+#### Known Problems 
+
+이렇게 `RedisCacheManagerBuilderCustomizer`를 등록하게 되면, `spring.cache.redis.key-prefix` 값이 적용되지 않는 문제가 있습니다.
+* 예를 들어, 앞에서 `demo:sessions::SessionController_getSession_3` 처럼 생성되었던 key 가 `demo:` 라는 key-prefix 가 적용되지 않고 `sessions::SessionController_getSession_3` 으로 저장됩니다.
